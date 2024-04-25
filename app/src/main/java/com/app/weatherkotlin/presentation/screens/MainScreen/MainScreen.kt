@@ -22,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -56,16 +57,22 @@ import kotlinx.coroutines.launch
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
 fun MainScreen() {
-    val coroutineScope = rememberCoroutineScope()
+    val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
     val context = LocalContext.current
     val getWeatherUseCase = GetWeatherUseCase(WeatherRepositoryImpl())
-    val cityName = "Medellin"
+    var cityName by remember { mutableStateOf("Medellin") }
     val weatherState = remember { mutableStateOf<Weather?>(null) }
 
     ContainerMain(Color(0XFF342564)) {
-        Column() {
+        Column {
             val weather = weatherState.value
-            SearchInput()
+            SearchInput(cityName = cityName, onSearch = { newCityName ->
+                cityName = newCityName
+                coroutineScope.launch(Dispatchers.IO) {
+                    val updatedWeather = getWeatherUseCase(cityName)
+                    weatherState.value = updatedWeather
+                }
+            })
             Result(weather)
         }
     }
@@ -88,33 +95,23 @@ fun ContainerMain(
 }
 
 @Composable
-fun Result(weather: Weather? = null, @SuppressLint("ModifierParameter") modifier: Modifier = Modifier) {
+fun Result(weather: Weather?, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxSize()
             .padding(8.dp)
     ) {
-        if(weather == null) {
+        if(weather != null) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Button(
-                    onClick = {
-//                        GlobalScope.launch(Dispatchers.IO) {
-//                            val updatedWeather = getWeatherUseCase(cityName = cityName)
-//                            weather = updatedWeather
-//                        }
-                    }
-                ) {
-                    Text(text = "Actualizar Clima")
-                }
                 Spacer(modifier = Modifier.size(16.dp))
                 Row(
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 ) {
                     Text(
-                        text = "Medellin",
+                        text = weather.cityName,
                         style = TextStyle(
                             fontSize = 30.sp,
                             color = Color.White,
@@ -131,7 +128,7 @@ fun Result(weather: Weather? = null, @SuppressLint("ModifierParameter") modifier
                         .height(250.dp)
                 )
                 Text(
-                    text = "37°C",
+                    text = "${weather.temperatureCelsius}°C",
                     style = TextStyle(
                         fontSize = 90.sp,
                         color = Color.White,
@@ -140,7 +137,7 @@ fun Result(weather: Weather? = null, @SuppressLint("ModifierParameter") modifier
                     modifier = Modifier.padding(8.dp)
                 )
                 Text(
-                    text = "117°F",
+                    text = "${weather.temperatureFahrenheit}°F",
                     style = TextStyle(
                         fontSize = 24.sp,
                         color = Color.White,
@@ -149,7 +146,7 @@ fun Result(weather: Weather? = null, @SuppressLint("ModifierParameter") modifier
                     modifier = Modifier.padding(8.dp)
                 )
                 Text(
-                    text = "Lat: 6.230833",
+                    text = "Lat: ${weather.latitude}",
                     style = TextStyle(
                         fontSize = 18.sp,
                         color = Color.White.copy(alpha = 0.8f),
@@ -158,7 +155,7 @@ fun Result(weather: Weather? = null, @SuppressLint("ModifierParameter") modifier
                     modifier = Modifier.padding(8.dp)
                 )
                 Text(
-                    text = "Lon: -75.590556",
+                    text = "Lon: ${weather.longitude}",
                     style = TextStyle(
                         fontSize = 18.sp,
                         color = Color.White.copy(alpha = 0.8f),
@@ -167,7 +164,7 @@ fun Result(weather: Weather? = null, @SuppressLint("ModifierParameter") modifier
                     modifier = Modifier.padding(8.dp)
                 )
                 Text(
-                    text = "Zona Horaria: America/Bogota",
+                    text = "Zona Horaria: ${weather.timeZone}",
                     style = TextStyle(
                         fontSize = 18.sp,
                         color = Color.White.copy(alpha = 0.8f),
@@ -177,11 +174,13 @@ fun Result(weather: Weather? = null, @SuppressLint("ModifierParameter") modifier
                 )
             }
         } else {
-            CircularProgressIndicator(
-                modifier = Modifier.width(64.dp),
-                color = MaterialTheme.colorScheme.secondary,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-            )
+//            CircularProgressIndicator(
+//                modifier = Modifier.align(Alignment.Center)
+//            )
+            Text(text = "No hay datos dale al icono del buscar", style = TextStyle(
+                fontSize = 20.sp,
+                color = Color.White
+            ))
         }
     }
 
@@ -189,8 +188,12 @@ fun Result(weather: Weather? = null, @SuppressLint("ModifierParameter") modifier
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchInput(modifier: Modifier = Modifier) {
-    var text by remember { mutableStateOf(TextFieldValue("")) }
+fun SearchInput(
+    cityName: String, // City name passed as a parameter
+    onSearch: (String) -> Unit // Callback function for search action
+) {
+    var text by remember { mutableStateOf(TextFieldValue(cityName)) } // Text state
+
     TextField(
         modifier = Modifier
             .fillMaxWidth()
@@ -203,8 +206,8 @@ fun SearchInput(modifier: Modifier = Modifier) {
             fontSize = 20.sp,
             color = Color.White
         ),
-        label = { Text(text = "Buscar ciudad") },
-        placeholder = { Text(text = "Ejemplo Medellin") },
+        label = { Text(text = "Buscar ciudad") }, // Label in Spanish
+        placeholder = { Text(text = "Ejemplo Medellin") }, // Placeholder in Spanish
         colors = TextFieldDefaults.textFieldColors(
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
@@ -213,9 +216,15 @@ fun SearchInput(modifier: Modifier = Modifier) {
             unfocusedLabelColor = Color.White,
             focusedLabelColor = Color.White,
             unfocusedPlaceholderColor = Color.White,
-
         ),
         shape = RoundedCornerShape(10.dp),
+        trailingIcon = {
+            IconButton(onClick = {
+                onSearch(text.text)
+            }) {
+                Icon(Icons.Outlined.Search, contentDescription = "Search Icon")
+            }
+        }
     )
 }
 
