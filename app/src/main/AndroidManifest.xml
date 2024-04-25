@@ -25,4 +25,9 @@
         </activity>
     </application>
 
+
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"
+        tools:ignore="ManifestOrder" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
 </manifest>
