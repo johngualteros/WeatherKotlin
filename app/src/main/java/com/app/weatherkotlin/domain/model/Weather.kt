@@ -6,7 +6,8 @@ data class Weather(
     val temperatureFahrenheit: Double,
     val latitude: Double,
     val longitude: Double,
-    val timeZone: Long
+    val timeZone: Long,
+    val weatherMain: String,
 )
 
 interface WeatherRepository {

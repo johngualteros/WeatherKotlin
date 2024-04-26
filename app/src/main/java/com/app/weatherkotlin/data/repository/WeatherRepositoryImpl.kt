@@ -22,7 +22,8 @@ class WeatherRepositoryImpl : WeatherRepository {
                 temperatureFahrenheit = Convertors.celsiusToFahrenheit(response.main.temp),
                 latitude = response.coord.lat,
                 longitude = response.coord.lon,
-                timeZone = response.timezone
+                timeZone = response.timezone,
+                weatherMain = response.weather[0].main
             )
         } catch (e: Exception) {
             return Weather(
@@ -31,7 +32,8 @@ class WeatherRepositoryImpl : WeatherRepository {
                 temperatureFahrenheit = 0.0,
                 latitude = 0.0,
                 longitude = 0.0,
-                timeZone = 0
+                timeZone = 0,
+                weatherMain = "default"
             )
         }
     }

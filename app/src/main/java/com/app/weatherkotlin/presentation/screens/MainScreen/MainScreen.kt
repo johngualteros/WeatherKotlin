@@ -121,7 +121,15 @@ fun Result(weather: Weather?, modifier: Modifier = Modifier) {
                     )
                 }
                 Image(
-                    painter = painterResource(id = R.drawable.rain),
+                    painter = painterResource(
+                        id = when (weather.weatherMain) {
+                            "Rain" -> R.drawable.rain
+                            "Clear" -> R.drawable.clear
+                            "Cloud" -> R.drawable.cloud
+                            "Thunderstorm" -> R.drawable.thunder
+                            else -> R.drawable.wind
+                        }
+                    ),
                     contentDescription = "Descripción de tu imagen",
                     modifier = Modifier
                         .fillMaxWidth()
