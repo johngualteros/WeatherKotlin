@@ -63,7 +63,17 @@ fun MainScreen() {
     var cityName by remember { mutableStateOf("Medellin") }
     val weatherState = remember { mutableStateOf<Weather?>(null) }
 
-    ContainerMain(Color(0XFF342564)) {
+    val weatherColorMapper: (String) -> Color = { weather ->
+        when (weather) {
+            "Rain" -> Color(0xFF91A1FC)
+            "Clear" -> Color(0xFFFCE191)
+            "Clouds" -> Color(0xFF96DFFF)
+            "Thunderstorm" -> Color(0xFF63519E)
+            else -> Color(0xFF4E727E)
+        }
+    }
+
+    ContainerMain(weatherColorMapper(weatherState.value?.weatherMain ?: "")) {
         Column {
             val weather = weatherState.value
             SearchInput(cityName = cityName, onSearch = { newCityName ->
@@ -125,7 +135,7 @@ fun Result(weather: Weather?, modifier: Modifier = Modifier) {
                         id = when (weather.weatherMain) {
                             "Rain" -> R.drawable.rain
                             "Clear" -> R.drawable.clear
-                            "Cloud" -> R.drawable.cloud
+                            "Clouds" -> R.drawable.cloud
                             "Thunderstorm" -> R.drawable.thunder
                             else -> R.drawable.wind
                         }
