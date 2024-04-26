@@ -192,7 +192,7 @@ fun SearchInput(
     cityName: String, // City name passed as a parameter
     onSearch: (String) -> Unit // Callback function for search action
 ) {
-    var text by remember { mutableStateOf(TextFieldValue(cityName)) } // Text state
+    var text by remember { mutableStateOf(TextFieldValue("")) } // Text state
 
     TextField(
         modifier = Modifier

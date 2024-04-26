@@ -14,14 +14,25 @@ class WeatherRepositoryImpl : WeatherRepository {
         .build()
     private val service = retrofit.create(WeatherApiService::class.java)
     override suspend fun getWeather(cityName: String): Weather {
-        val response = service.getWeather(cityName, apiKey)
-        return Weather(
-            cityName = response.name,
-            temperatureCelsius = response.main.temp,
-            temperatureFahrenheit = Convertors.celsiusToFahrenheit(response.main.temp),
-            latitude = response.coord.lat,
-            longitude = response.coord.lon,
-            timeZone = response.timezone
-        )
+        try {
+            val response = service.getWeather(cityName, "metric" , apiKey)
+            return Weather(
+                cityName = response.name,
+                temperatureCelsius = response.main.temp,
+                temperatureFahrenheit = Convertors.celsiusToFahrenheit(response.main.temp),
+                latitude = response.coord.lat,
+                longitude = response.coord.lon,
+                timeZone = response.timezone
+            )
+        } catch (e: Exception) {
+            return Weather(
+                cityName = "Ciudad no encontrada",
+                temperatureCelsius = 0.0,
+                temperatureFahrenheit = 0.0,
+                latitude = 0.0,
+                longitude = 0.0,
+                timeZone = 0
+            )
+        }
     }
 }
