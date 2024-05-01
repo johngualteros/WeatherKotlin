@@ -16,12 +16,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -60,7 +63,7 @@ import java.security.Permissions
 
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(onLogoutClick: () -> Unit) {
     val coroutineScope = rememberCoroutineScope() // Remember a coroutine scope
     val context = LocalContext.current
     val getWeatherUseCase = GetWeatherUseCase(WeatherRepositoryImpl())
@@ -73,11 +76,11 @@ fun MainScreen() {
             "Clear" -> Color(0xFFFCE191)
             "Clouds" -> Color(0xFF96DFFF)
             "Thunderstorm" -> Color(0xFF63519E)
-            else -> Color(0xFF4E727E)
+            else -> Color(0xFF342564)
         }
     }
 
-    ContainerMain(weatherColorMapper(weatherState.value?.weatherMain ?: "")) {
+    ContainerMain(weatherColorMapper(weatherState.value?.weatherMain ?: ""), onLogoutClick) {
         Column {
             val weather = weatherState.value
             SearchInput(cityName = cityName, onSearch = { newCityName ->
@@ -96,6 +99,7 @@ fun MainScreen() {
 @Composable
 fun ContainerMain(
     color: Color = Color(0XFF3D81F1),
+    onLogoutClick: () -> Unit,
     content: @Composable () -> Unit
 ) {
     Box(
@@ -105,7 +109,21 @@ fun ContainerMain(
             .padding(16.dp)
     ) {
         content()
+
+        // floating action button
+        FloatingActionButton(
+            onClick = onLogoutClick,
+            containerColor = Color.White.copy(alpha = 0.5f),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            shape = CircleShape
+        ) {
+            Icon(Icons.Default.ExitToApp, contentDescription = "Logout Icon")
+        }
     }
+
+
 }
 
 @Composable
@@ -245,10 +263,4 @@ fun SearchInput(
             }
         }
     )
-}
-
-@Preview
-@Composable
-fun MainScreenPreview() {
-    MainScreen()
 }

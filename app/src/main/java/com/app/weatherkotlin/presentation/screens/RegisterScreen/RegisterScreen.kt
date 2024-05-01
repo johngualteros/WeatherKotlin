@@ -86,10 +86,6 @@ class RegisterActivity : ComponentActivity() {
                     val intent = Intent(context, MainActivity::class.java)
                     startActivity(intent)
                 } else {
-                    // validate if the user is already registered
-
-
-
                     Log.w("Credentials", "createUserWithEmail:failure", task.exception)
                     Toast.makeText(baseContext, "Error en la autenticación", Toast.LENGTH_SHORT).show()
                 }

@@ -29,6 +29,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    fun signOut() {
+        auth.signOut()
+        val intent = Intent(this, LoginActivity::class.java)
+        startActivity(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         auth = Firebase.auth
@@ -36,7 +42,7 @@ class MainActivity : ComponentActivity() {
             WeatherKotlinTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    MainScreen()
+                    MainScreen(onLogoutClick = ::signOut)
                 }
             }
         }
