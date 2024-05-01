@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -44,13 +45,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.sp
 import com.app.weatherkotlin.MainActivity
 import com.app.weatherkotlin.domain.model.Credentials
 import com.app.weatherkotlin.presentation.screens.RegisterScreen.RegisterActivity
+import com.app.weatherkotlin.presentation.screens.RegisterScreen.RegisterField
 import com.app.weatherkotlin.presentation.screens.RegisterScreen.goToLogin
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -63,8 +74,26 @@ class LoginActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         auth = Firebase.auth
         setContent{
-            LoginForm()
+            LoginForm(signIn = ::signIn)
         }
+    }
+
+    fun signIn(creds: Credentials, context: Context) {
+        Log.d("Credentials", creds.toString())
+        Log.d("Credentials", creds.email)
+        Log.d("Credentials", creds.pwd)
+
+        auth.signInWithEmailAndPassword(creds.email, creds.pwd)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    val intent = Intent(context, MainActivity::class.java)
+                    context.startActivity(intent)
+                    (context as Activity).finish()
+                } else {
+                    Log.w("Login", "signInWithEmail:failure", task.exception)
+                    Toast.makeText(context, "Datos invalidos", Toast.LENGTH_SHORT).show()
+                }
+            }
     }
 
     public override fun onStart() {
@@ -94,7 +123,9 @@ fun goToRegister(context: Context) {
 }
 
 @Composable
-fun LoginForm() {
+fun LoginForm(
+    signIn: (Credentials, Context) -> Unit
+) {
     Surface {
         var credentials by remember { mutableStateOf(Credentials()) }
         val context = LocalContext.current
@@ -106,39 +137,71 @@ fun LoginForm() {
                 .fillMaxSize()
                 .padding(horizontal = 30.dp)
         ) {
+            Row(
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Iniciar Sesión",
+                    style = TextStyle(
+                        fontSize = 30.sp,
+                        color = Color(0xFF222222),
+                        fontWeight = FontWeight.ExtraBold
+                    ),
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(15.dp))
             LoginField(
                 value = credentials.email,
                 onChange = { data -> credentials = credentials.copy(email = data) },
                 modifier = Modifier.fillMaxWidth()
             )
+            Spacer(modifier = Modifier.height(30.dp))
             PasswordField(
                 value = credentials.pwd,
                 onChange = { data -> credentials = credentials.copy(pwd = data) },
                 submit = {
-                    if (!checkCredentials(credentials, context)) credentials = Credentials()
+                    signIn(credentials, context)
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(40.dp))
             Button(
                 onClick = {
-                    if (!checkCredentials(credentials, context)) credentials = Credentials()
+                    signIn(credentials, context)
                 },
                 enabled = credentials.isNotEmpty(),
-                shape = RoundedCornerShape(5.dp),
-                modifier = Modifier.fillMaxWidth()
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8157DA)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
             ) {
-                Text("Login")
+                Text(
+                    "Iniciar Sesión",
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    ),
+                )
             }
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(90.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Aun no tienes cuenta?")
+                Text("Aún no tienes una cuenta?")
+                Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    "Inicio de sesion",
-                    modifier = Modifier.clickable { goToRegister(context) }
+                    "Registrate",
+                    modifier = Modifier.clickable { goToRegister(context) },
+                    style = TextStyle(
+                        fontSize = 16.sp,
+                        color = Color(0xFF24BDFF),
+                        textDecoration = TextDecoration.Underline
+                    ),
                 )
             }
         }
@@ -152,24 +215,16 @@ fun LoginField(
     value: String,
     onChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Login",
-    placeholder: String = "Enter your Login"
+    label: String = "Email",
+    placeholder: String = "Digite su email"
 ) {
 
     val focusManager = LocalFocusManager.current
-    val leadingIcon = @Composable {
-        Icon(
-            Icons.Default.Person,
-            contentDescription = "",
-            tint = MaterialTheme.colorScheme.primary
-        )
-    }
 
     TextField(
         value = value,
         onValueChange = onChange,
         modifier = modifier,
-        leadingIcon = leadingIcon,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
         keyboardActions = KeyboardActions(
             onNext = { focusManager.moveFocus(FocusDirection.Down) }
@@ -177,29 +232,31 @@ fun LoginField(
         placeholder = { Text(placeholder) },
         label = { Text(label) },
         singleLine = true,
-        visualTransformation = VisualTransformation.None
+        visualTransformation = VisualTransformation.None,
+        colors = TextFieldDefaults.textFieldColors(
+            unfocusedIndicatorColor = Color(0xFFDADADA),
+            cursorColor = Color(0xFF222222),
+            containerColor = Color.Transparent,
+            unfocusedLabelColor = Color(0xFF222222),
+            focusedLabelColor = Color(0xFF222222),
+            unfocusedPlaceholderColor = Color(0xFF222222),
+        ),
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PasswordField(
     value: String,
     onChange: (String) -> Unit,
     submit: () -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Password",
-    placeholder: String = "Enter your Password"
+    label: String = "Contraseña",
+    placeholder: String = "Digite su contraseña"
 ) {
 
     var isPasswordVisible by remember { mutableStateOf(false) }
 
-    val leadingIcon = @Composable {
-        Icon(
-            Icons.Default.Key,
-            contentDescription = "",
-            tint = MaterialTheme.colorScheme.primary
-        )
-    }
     val trailingIcon = @Composable {
         IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
             Icon(
@@ -215,7 +272,6 @@ fun PasswordField(
         value = value,
         onValueChange = onChange,
         modifier = modifier,
-        leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
         keyboardOptions = KeyboardOptions(
             imeAction = ImeAction.Done,
@@ -227,6 +283,14 @@ fun PasswordField(
         placeholder = { Text(placeholder) },
         label = { Text(label) },
         singleLine = true,
+        colors = TextFieldDefaults.textFieldColors(
+            unfocusedIndicatorColor = Color(0xFFDADADA),
+            cursorColor = Color(0xFF222222),
+            containerColor = Color.Transparent,
+            unfocusedLabelColor = Color(0xFF222222),
+            focusedLabelColor = Color(0xFF222222),
+            unfocusedPlaceholderColor = Color(0xFF222222),
+        ),
         visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation()
     )
 }

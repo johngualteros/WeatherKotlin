@@ -71,7 +71,7 @@ class RegisterActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         auth = Firebase.auth
         setContent{
-            LoginForm(signUp = ::signUp)
+            RegisterForm(signUp = ::signUp)
         }
     }
 
@@ -86,6 +86,10 @@ class RegisterActivity : ComponentActivity() {
                     val intent = Intent(context, MainActivity::class.java)
                     startActivity(intent)
                 } else {
+                    // validate if the user is already registered
+
+
+
                     Log.w("Credentials", "createUserWithEmail:failure", task.exception)
                     Toast.makeText(baseContext, "Error en la autenticación", Toast.LENGTH_SHORT).show()
                 }
@@ -109,7 +113,7 @@ fun goToLogin(context: Context) {
 }
 
 @Composable
-fun LoginForm(
+fun RegisterForm(
     signUp: (Credentials, Context) -> Unit
 ) {
     Surface {
@@ -118,7 +122,6 @@ fun LoginForm(
 
         Column(
             verticalArrangement = Arrangement.Center,
-//            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 30.dp)
@@ -157,7 +160,7 @@ fun LoginForm(
                 onClick = {
                           signUp(credentials, context)
                 },
-//                enabled = credentials.isNotEmpty(),
+                enabled = credentials.isNotEmpty(),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8157DA)),
                 modifier = Modifier
@@ -279,10 +282,4 @@ fun PasswordField(
         ),
         visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation()
     )
-}
-
-@Preview
-@Composable
-fun PreviewLoginForm() {
-    LoginForm(signUp = { _, _ -> })
 }

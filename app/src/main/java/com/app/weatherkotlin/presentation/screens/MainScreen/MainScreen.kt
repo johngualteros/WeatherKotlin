@@ -196,9 +196,6 @@ fun Result(weather: Weather?, modifier: Modifier = Modifier) {
                 )
             }
         } else {
-//            CircularProgressIndicator(
-//                modifier = Modifier.align(Alignment.Center)
-//            )
             Text(text = "No hay datos dale al icono del buscar", style = TextStyle(
                 fontSize = 20.sp,
                 color = Color.White
