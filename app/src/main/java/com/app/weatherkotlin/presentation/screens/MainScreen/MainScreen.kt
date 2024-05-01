@@ -6,8 +6,10 @@ import android.widget.Space
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -214,7 +217,7 @@ fun Result(weather: Weather?, modifier: Modifier = Modifier) {
                 )
             }
         } else {
-            Text(text = "No hay datos dale al icono del buscar", style = TextStyle(
+            Text(text = "Aún no has buscado una ciudad", style = TextStyle(
                 fontSize = 20.sp,
                 color = Color.White
             ))
@@ -230,37 +233,58 @@ fun SearchInput(
     onSearch: (String) -> Unit // Callback function for search action
 ) {
     var text by remember { mutableStateOf(TextFieldValue("")) } // Text state
-
-    TextField(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        value = text,
-        onValueChange = {
-            text = it
-        },
-        textStyle = TextStyle(
-            fontSize = 20.sp,
-            color = Color.White
-        ),
-        label = { Text(text = "Buscar ciudad") }, // Label in Spanish
-        placeholder = { Text(text = "Ejemplo Medellin") }, // Placeholder in Spanish
-        colors = TextFieldDefaults.textFieldColors(
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            cursorColor = Color.White,
-            containerColor = Color.White.copy(alpha = 0.2f),
-            unfocusedLabelColor = Color.White,
-            focusedLabelColor = Color.White,
-            unfocusedPlaceholderColor = Color.White,
-        ),
-        shape = RoundedCornerShape(10.dp),
-        trailingIcon = {
-            IconButton(onClick = {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        TextField(
+            modifier = Modifier
+//                .fillMaxWidth()
+                .weight(1f)
+                .padding(8.dp),
+            value = text,
+            onValueChange = {
+                text = it
+            },
+            textStyle = TextStyle(
+                fontSize = 20.sp,
+                color = Color.White
+            ),
+            label = { Text(text = "Buscar ciudad") }, // Label in Spanish
+            placeholder = { Text(text = "Ejemplo Medellin") }, // Placeholder in Spanish
+            colors = TextFieldDefaults.textFieldColors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                cursorColor = Color.White,
+                containerColor = Color.White.copy(alpha = 0.2f),
+                unfocusedLabelColor = Color.White,
+                focusedLabelColor = Color.White,
+                unfocusedPlaceholderColor = Color.White,
+            ),
+            shape = RoundedCornerShape(10.dp),
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Button(
+            onClick = {
                 onSearch(text.text)
-            }) {
-                Icon(Icons.Outlined.Search, contentDescription = "Search Icon")
-            }
+            },
+            modifier = Modifier
+                .height(56.dp).width(110.dp),
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.White.copy(alpha = 0.4f),
+                contentColor = Color.White
+            )
+        ) {
+            Text(
+                text = "Buscar",
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
+            )
         }
-    )
+    }
+
 }
