@@ -1,9 +1,10 @@
-package com.app.weatherkotlin.presentation.screens.LoginScreen
+package com.app.weatherkotlin.presentation.screens.RegisterScreen
 
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -44,27 +45,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import com.app.weatherkotlin.MainActivity
 import com.app.weatherkotlin.domain.model.Credentials
-import com.app.weatherkotlin.presentation.screens.RegisterScreen.RegisterActivity
-import com.app.weatherkotlin.presentation.screens.RegisterScreen.goToLogin
+import com.app.weatherkotlin.presentation.screens.LoginScreen.LoginActivity
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 
-class LoginActivity : ComponentActivity() {
+class RegisterActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         auth = Firebase.auth
         setContent{
-            LoginForm()
+            LoginForm(signUp = ::signUp)
         }
+    }
+
+    fun signUp(creds: Credentials, context: Context) {
+        Log.d("Credentials", creds.toString())
+        Log.d("Credentials", creds.email)
+        Log.d("Credentials", creds.pwd)
+        auth.createUserWithEmailAndPassword(creds.email, creds.pwd)
+            .addOnCompleteListener(this) { task ->
+                if(task.isSuccessful) {
+                    Log.d("Credentials", "createUserWithEmail:success")
+                    val intent = Intent(context, MainActivity::class.java)
+                    startActivity(intent)
+                } else {
+                    Log.w("Credentials", "createUserWithEmail:failure", task.exception)
+                    Toast.makeText(baseContext, "Error en la autenticación", Toast.LENGTH_SHORT).show()
+                }
+            }
     }
 
     public override fun onStart() {
@@ -77,24 +96,16 @@ class LoginActivity : ComponentActivity() {
     }
 }
 
-fun checkCredentials(creds: Credentials, context: Context): Boolean {
-    if (creds.isNotEmpty() && creds.email == "admin") {
-        context.startActivity(Intent(context, MainActivity::class.java))
-        (context as Activity).finish()
-        return true
-    } else {
-        Toast.makeText(context, "Wrong Credentials", Toast.LENGTH_SHORT).show()
-        return false
-    }
-}
 
-fun goToRegister(context: Context) {
-    context.startActivity(Intent(context, RegisterActivity::class.java))
+fun goToLogin(context: Context) {
+    context.startActivity(Intent(context, LoginActivity::class.java))
     (context as Activity).finish()
 }
 
 @Composable
-fun LoginForm() {
+fun LoginForm(
+    signUp: (Credentials, Context) -> Unit
+) {
     Surface {
         var credentials by remember { mutableStateOf(Credentials()) }
         val context = LocalContext.current
@@ -106,7 +117,12 @@ fun LoginForm() {
                 .fillMaxSize()
                 .padding(horizontal = 30.dp)
         ) {
-            LoginField(
+            Row() {
+                Icon(Icons.Default.Person, contentDescription = "Person")
+                Spacer(modifier = Modifier.width(10.dp))
+                Text("Registrarse")
+            }
+            RegisterField(
                 value = credentials.email,
                 onChange = { data -> credentials = credentials.copy(email = data) },
                 modifier = Modifier.fillMaxWidth()
@@ -115,30 +131,30 @@ fun LoginForm() {
                 value = credentials.pwd,
                 onChange = { data -> credentials = credentials.copy(pwd = data) },
                 submit = {
-                    if (!checkCredentials(credentials, context)) credentials = Credentials()
+                    signUp(credentials, context)
                 },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = {
-                    if (!checkCredentials(credentials, context)) credentials = Credentials()
+                          signUp(credentials, context)
                 },
                 enabled = credentials.isNotEmpty(),
                 shape = RoundedCornerShape(5.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Login")
+                Text("Registrarme")
             }
             Spacer(modifier = Modifier.height(20.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Aun no tienes cuenta?")
+                Text("Ya tienes una cuenta?")
                 Text(
-                    "Inicio de sesion",
-                    modifier = Modifier.clickable { goToRegister(context) }
+                    "Iniciar sesión",
+                    modifier = Modifier.clickable { goToLogin(context) }
                 )
             }
         }
@@ -148,28 +164,20 @@ fun LoginForm() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginField(
+fun RegisterField(
     value: String,
     onChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Login",
-    placeholder: String = "Enter your Login"
+    label: String = "Email",
+    placeholder: String = "Digite su email"
 ) {
 
     val focusManager = LocalFocusManager.current
-    val leadingIcon = @Composable {
-        Icon(
-            Icons.Default.Person,
-            contentDescription = "",
-            tint = MaterialTheme.colorScheme.primary
-        )
-    }
 
     TextField(
         value = value,
         onValueChange = onChange,
         modifier = modifier,
-        leadingIcon = leadingIcon,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
         keyboardActions = KeyboardActions(
             onNext = { focusManager.moveFocus(FocusDirection.Down) }
@@ -187,19 +195,12 @@ fun PasswordField(
     onChange: (String) -> Unit,
     submit: () -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Password",
-    placeholder: String = "Enter your Password"
+    label: String = "Contraseña",
+    placeholder: String = "Digite su contraseña"
 ) {
 
     var isPasswordVisible by remember { mutableStateOf(false) }
 
-    val leadingIcon = @Composable {
-        Icon(
-            Icons.Default.Key,
-            contentDescription = "",
-            tint = MaterialTheme.colorScheme.primary
-        )
-    }
     val trailingIcon = @Composable {
         IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
             Icon(
@@ -215,7 +216,6 @@ fun PasswordField(
         value = value,
         onValueChange = onChange,
         modifier = modifier,
-        leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
         keyboardOptions = KeyboardOptions(
             imeAction = ImeAction.Done,
@@ -229,4 +229,10 @@ fun PasswordField(
         singleLine = true,
         visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation()
     )
+}
+
+@Preview
+@Composable
+fun PreviewLoginForm() {
+    LoginForm(signUp = { _, _ -> })
 }
