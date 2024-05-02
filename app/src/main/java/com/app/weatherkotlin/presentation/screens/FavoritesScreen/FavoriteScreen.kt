@@ -190,9 +190,7 @@ fun FavoriteScreen(
                 myFavorites.value.forEach { it ->
                     ListViewElement(it.name) {
                         deleteFavorite(it.name)
-                        getFavorites() {
-                            myFavorites.value = it
-                        }
+                        myFavorites.value = myFavorites.value.filter { favorite -> favorite.name != it.name }
                     }
                 }
             } else {
