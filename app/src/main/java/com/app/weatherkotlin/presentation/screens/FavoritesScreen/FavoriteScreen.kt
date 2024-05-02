@@ -9,8 +9,10 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,6 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
@@ -59,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import com.app.weatherkotlin.MainActivity
 import com.app.weatherkotlin.domain.model.Credentials
 import com.app.weatherkotlin.presentation.screens.LoginScreen.LoginActivity
+import com.app.weatherkotlin.presentation.screens.LoginScreen.goToRegister
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
@@ -79,11 +83,16 @@ class FavoriteActivity : ComponentActivity() {
     public override fun onStart() {
         super.onStart()
         val currentUser = auth.currentUser
-        if (currentUser != null) {
-            val intent = Intent(this, MainActivity::class.java)
+        if (currentUser == null) {
+            val intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
         }
     }
+}
+
+fun goBack(context: Context) {
+    context.startActivity(Intent(context, MainActivity::class.java))
+    (context as Activity).finish()
 }
 
 @Composable
@@ -93,13 +102,81 @@ fun FavoriteScreen() {
         val context = LocalContext.current
 
         Column(
-            verticalArrangement = Arrangement.Center,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 30.dp)
+                .padding(horizontal = 40.dp)
         ) {
-            Text(text = "Favorites", style = MaterialTheme.typography.bodyLarge)
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                "Volver",
+                modifier = Modifier.clickable { goBack(context) },
+                style = TextStyle(
+                    fontSize = 17.sp,
+                    color = Color(0xFF24BDFF),
+                    fontWeight = FontWeight.Bold,
+                    textDecoration = TextDecoration.Underline
+                ),
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                "Mis Favoritos",
+                style = TextStyle(
+                    fontSize = 30.sp,
+                    color = Color(0xFF222222),
+                    fontWeight = FontWeight.ExtraBold
+                ),
+            )
+            ListViewElement(text = "Medellin") {  }
+            ListViewElement(text = "Madrid") {  }
         }
     }
 }
 
+@Composable
+fun ListViewElement(text: String, onRemoveClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+    ) {
+        Spacer(modifier = Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = text,
+                style = TextStyle(
+                    fontSize = 20.sp,
+                    color = Color(0xFF222222),
+                )
+            )
+            Button(
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7575)),
+                onClick = { onRemoveClick() }) {
+                Text(
+                    text = "Quitar",
+                    style = TextStyle(
+                        fontSize = 16.sp,
+                        color = Color.White,
+                    )
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(Color(0xFFD3D3D3))
+        )
+
+    }
+}
+
+
+@Preview
+@Composable
+fun PreviewFavoriteScreen() {
+    FavoriteScreen()
+}
