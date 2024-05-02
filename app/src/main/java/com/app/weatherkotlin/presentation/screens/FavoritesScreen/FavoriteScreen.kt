@@ -61,32 +61,84 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.weatherkotlin.MainActivity
 import com.app.weatherkotlin.domain.model.Credentials
+import com.app.weatherkotlin.domain.model.Favorite
 import com.app.weatherkotlin.presentation.screens.LoginScreen.LoginActivity
 import com.app.weatherkotlin.presentation.screens.LoginScreen.goToRegister
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlin.reflect.KFunction1
 
 
 class FavoriteActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
+    private lateinit var fireStore: FirebaseFirestore
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        auth = Firebase.auth
-        setContent{
-            FavoriteScreen()
-        }
-    }
-
+    // Public properties
+    private lateinit var currentUser: FirebaseUser
 
     public override fun onStart() {
         super.onStart()
         val currentUser = auth.currentUser
+        if (currentUser != null) {
+            this.currentUser = currentUser
+        }
         if (currentUser == null) {
             val intent = Intent(this, LoginActivity::class.java)
             startActivity(intent)
         }
+    }
+    
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        auth = Firebase.auth
+        fireStore = FirebaseFirestore.getInstance()
+        setContent{
+            FavoriteScreen(
+                deleteFavorite = ::deleteFavorite,
+                getFavorites = ::getFavorites
+            )
+        }
+    }
+
+    fun deleteFavorite(city: String) {
+        fireStore.collection("favorites")
+            .whereEqualTo("city", city)
+            .whereEqualTo("userId", currentUser.uid)
+            .get()
+            .addOnSuccessListener { documents ->
+                for (document in documents) {
+                    fireStore.collection("favorites").document(document.id).delete()
+                }
+            }
+            .addOnFailureListener { exception ->
+                Log.w("deleteFavorite", "Error getting documents: ", exception)
+            }
+    }
+
+    fun getFavorites(callback: (List<Favorite>) -> Unit) {
+        fireStore.collection("favorites")
+            .whereEqualTo("userId", currentUser.uid)
+            .get()
+            .addOnSuccessListener { documents ->
+                val favorites = mutableListOf<Favorite>()
+                for (document in documents) {
+                    favorites.add(
+                        Favorite(
+                            id = document.id,
+                            name = document.data["city"].toString(),
+                            userId = document.data["userId"].toString()
+                        )
+                    )
+                }
+                callback(favorites)
+            }
+            .addOnFailureListener { exception ->
+                Log.w("getFavorites", "Error getting documents: ", exception)
+                callback(emptyList())
+            }
     }
 }
 
@@ -96,10 +148,18 @@ fun goBack(context: Context) {
 }
 
 @Composable
-fun FavoriteScreen() {
+fun FavoriteScreen(
+    deleteFavorite: KFunction1<String, Unit>,
+    getFavorites: KFunction1<(List<Favorite>) -> Unit, Unit>
+) {
     Surface {
         var credentials by remember { mutableStateOf(Credentials()) }
         val context = LocalContext.current
+        val myFavorites = remember { mutableStateOf<List<Favorite>>(emptyList()) }
+
+        getFavorites() {
+            myFavorites.value = it
+        }
 
         Column(
             modifier = Modifier
@@ -126,8 +186,24 @@ fun FavoriteScreen() {
                     fontWeight = FontWeight.ExtraBold
                 ),
             )
-            ListViewElement(text = "Medellin") {  }
-            ListViewElement(text = "Madrid") {  }
+            if(myFavorites.value.isNotEmpty()) {
+                myFavorites.value.forEach { it ->
+                    ListViewElement(it.name) {
+                        deleteFavorite(it.name)
+                        getFavorites() {
+                            myFavorites.value = it
+                        }
+                    }
+                }
+            } else {
+                Text(
+                    "No tienes favoritos",
+                    style = TextStyle(
+                        fontSize = 20.sp,
+                        color = Color(0xFF222222),
+                    )
+                )
+            }
         }
     }
 }
@@ -172,11 +248,4 @@ fun ListViewElement(text: String, onRemoveClick: () -> Unit) {
         )
 
     }
-}
-
-
-@Preview
-@Composable
-fun PreviewFavoriteScreen() {
-    FavoriteScreen()
 }
