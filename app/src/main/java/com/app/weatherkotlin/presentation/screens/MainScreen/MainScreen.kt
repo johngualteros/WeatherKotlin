@@ -1,11 +1,14 @@
 package com.app.weatherkotlin.presentation.screens.MainScreen
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.widget.Space
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -57,6 +61,7 @@ import com.app.weatherkotlin.R
 import com.app.weatherkotlin.data.repository.WeatherRepositoryImpl
 import com.app.weatherkotlin.domain.model.Weather
 import com.app.weatherkotlin.domain.use_case.GetWeatherUseCase
+import com.app.weatherkotlin.presentation.screens.FavoritesScreen.FavoriteActivity
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -77,7 +82,7 @@ fun MainScreen(onLogoutClick: () -> Unit) {
         when (weather) {
             "Rain" -> Color(0xFF91A1FC)
             "Clear" -> Color(0xFFFCE191)
-            "Clouds" -> Color(0xFF96DFFF)
+            "Clouds" -> Color(0xFF2E90BB)
             "Thunderstorm" -> Color(0xFF63519E)
             else -> Color(0xFF342564)
         }
@@ -98,6 +103,10 @@ fun MainScreen(onLogoutClick: () -> Unit) {
     }
 }
 
+fun goToFavorites(context: Context) {
+    context.startActivity(Intent(context, FavoriteActivity::class.java))
+    (context as Activity).finish()
+}
 
 @Composable
 fun ContainerMain(
@@ -131,6 +140,9 @@ fun ContainerMain(
 
 @Composable
 fun Result(weather: Weather?, modifier: Modifier = Modifier) {
+    val isMarkedAsFavorite = remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -145,6 +157,16 @@ fun Result(weather: Weather?, modifier: Modifier = Modifier) {
                 Row(
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 ) {
+                    Icon(
+                        Icons.Default.StarOutline,
+                        contentDescription = "Search Icon",
+                        tint = if (isMarkedAsFavorite.value) Color(0xFFFF7E7E) else Color.White,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clickable(onClick = {
+                                isMarkedAsFavorite.value = !isMarkedAsFavorite.value
+                            })
+                    )
                     Text(
                         text = weather.cityName,
                         style = TextStyle(
@@ -215,6 +237,30 @@ fun Result(weather: Weather?, modifier: Modifier = Modifier) {
                     ),
                     modifier = Modifier.padding(8.dp)
                 )
+
+                if (isMarkedAsFavorite.value) {
+                    Button(
+                        onClick = {
+                            goToFavorites(context)
+                        },
+                        modifier = Modifier
+                            .padding(8.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black
+                        )
+                    ) {
+                        Text(
+                            text = "Ir a favoritos",
+                            style = TextStyle(
+                                fontSize = 16.sp,
+                                color = Color.Black,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                    }
+                }
             }
         } else {
             Text(text = "Aún no has buscado una ciudad", style = TextStyle(
@@ -270,7 +316,8 @@ fun SearchInput(
                 onSearch(text.text)
             },
             modifier = Modifier
-                .height(56.dp).width(110.dp),
+                .height(56.dp)
+                .width(110.dp),
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color.White.copy(alpha = 0.4f),
